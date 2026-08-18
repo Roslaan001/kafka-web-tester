@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kafka Web Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Kafka Web Studio</h1>
+          <span class="badge" id="cluster-status-badge">Disconnected</span>
+        </div>
+      </div>
+      
+      <div class="header-connection-bar">
+        <div class="input-with-icon">
+          <input type="text" id="broker-input" placeholder="e.g. localhost:9092 or broker-host:port" value="localhost:9092">
+        </div>
+        <button id="btn-connect" class="btn btn-primary">Connect</button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Left sidebar: Topics -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>Topics</h2>
+          <button id="btn-open-create-topic" class="btn btn-sm btn-secondary">+ New</button>
+        </div>
+
+        <div class="topic-list" id="topic-list">
+          <div class="empty-state-card">
+            <p>Connect to a broker to view topics</p>
+          </div>
+        </div>
+
+        <!-- Create Topic Modal / Inline Form -->
+        <div id="create-topic-box" class="create-topic-box hidden">
+          <h3>Create New Topic</h3>
+          <div class="form-group">
+            <label for="new-topic-name">Topic Name</label>
+            <input type="text" id="new-topic-name" placeholder="my-events">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="new-topic-partitions">Partitions</label>
+              <input type="number" id="new-topic-partitions" value="1" min="1">
+            </div>
+            <div class="form-group">
+              <label for="new-topic-replication">Replication</label>
+              <input type="number" id="new-topic-replication" value="1" min="1">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="btn-cancel-topic" class="btn btn-sm btn-ghost">Cancel</button>
+            <button id="btn-submit-topic" class="btn btn-sm btn-primary">Create</button>
+          </div>
+        </div>
+
+        <div class="cluster-info-panel" id="cluster-info-panel">
+          <div class="info-title">Cluster Details</div>
+          <div class="info-item"><span>Cluster ID:</span> <strong id="info-cluster-id">-</strong></div>
+          <div class="info-item"><span>Controller ID:</span> <strong id="info-controller-id">-</strong></div>
+          <div class="info-item"><span>Brokers:</span> <strong id="info-brokers-count">-</strong></div>
+        </div>
+      </aside>
+
+      <!-- Right main area: Producer & Consumer -->
+      <section class="workspace">
+        <div class="workspace-grid">
+          
+          <!-- Producer Card -->
+          <div class="panel card">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span class="dot dot-producer"></span>
+                <h2>Produce Message</h2>
+              </div>
+              <div class="panel-meta">
+                <label for="target-topic-produce">Target Topic:</label>
+                <select id="target-topic-produce">
+                  <option value="">(Select a topic)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="panel-body">
+              <div class="form-group">
+                <label for="message-key">Message Key <span class="optional">(Optional)</span></label>
+                <input type="text" id="message-key" placeholder="user-1234">
+              </div>
+
+              <div class="form-group">
+                <label for="message-payload">Message Value (JSON or Text)</label>
+                <textarea id="message-payload" rows="7" placeholder='{ "event": "order_created", "amount": 99.99, "currency": "USD" }'></textarea>
+              </div>
+
+              <div class="action-bar">
+                <button id="btn-send-message" class="btn btn-primary">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                  Publish Message
+                </button>
+                <span id="produce-status" class="status-indicator"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Consumer Card -->
+          <div class="panel card consumer-panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span class="dot dot-consumer" id="consumer-dot"></span>
+                <h2>Real-time Consumer</h2>
+              </div>
+
+              <div class="consumer-controls">
+                <select id="target-topic-consume">
+                  <option value="">(Select a topic)</option>
+                </select>
+                <button id="btn-toggle-consume" class="btn btn-secondary">Start Listening</button>
+                <button id="btn-clear-messages" class="btn btn-ghost btn-sm">Clear</button>
+              </div>
+            </div>
+
+            <div class="panel-body messages-stream" id="messages-container">
+              <div class="stream-empty" id="stream-empty-state">
+                <p>Select a topic and click "Start Listening" to stream incoming records.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
